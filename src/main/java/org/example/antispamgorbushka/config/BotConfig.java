@@ -25,11 +25,14 @@ public class BotConfig {
     @Value("${admin.chatid}")
     String adminChatId;
 
-    @Value("${user.owner.chatId}")
-    Long userOwnerChatId;
+    @Value("${sender.chat.romanmedvedev93.user.name}")
+    String senderChatRomanmedvedev93UserName;
 
-    @Value("${channel.owner.chatId}")
-    Long channelOwnerChatId;
+    @Value("${sender.chat.medvedev93.user.name}")
+    String senderChatMedvedev93UserName;
+
+//    @Value("${sender.chat.gorbushka.user.name}")
+//    String senderChatGorbushkaUserName;
 
     private String getCurrentPath() {
         return System.getProperty(USER_DIR) + SHIELD;

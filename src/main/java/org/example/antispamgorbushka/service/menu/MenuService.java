@@ -11,8 +11,6 @@ import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import static org.example.antispamgorbushka.constant.Constant.Command.COMMAND_START;
 
@@ -24,11 +22,26 @@ public class MenuService {
     private BotConfig botConfig;
 
     private List<String> expectedWords = List.of("куплю", "продам", "предложите");
-    private List<String> blockWords = List.of("http", "https", "@");
+    private List<String> blockWords = List.of("http", "https", "@", "чат", "канал", "группа", "переходи"
+            , "приходи", "профиль", "бот");
+
+    public List<PartialBotApiMethod> messageProcess(Update update) {
+        if (update.hasEditedMessage()) {
+            return checkMessage(update.getEditedMessage());
+        }
+        if (update.hasMessage()) {
+            return checkMessage(update.getMessage());
+        }
+        return prepareEmptyAnswer();
+    }
 
     private boolean wordsExists(String message, List<String> words) {
+        if (message == null) {
+            return false;
+        }
+        val messageLowerCase = message.toLowerCase();
         val wordsExists = words.stream()
-                .filter(word -> message.toLowerCase().contains(word))
+                .filter(word -> messageLowerCase.contains(word))
                 .findFirst()
                 .orElse(null);
         return wordsExists != null;
@@ -42,30 +55,37 @@ public class MenuService {
         return wordsExists(message, expectedWords);
     }
 
-    private boolean isChannelOwnerChat(Long chatId) {
-        return chatId.equals(botConfig.getChannelOwnerChatId()) || chatId.equals(botConfig.getUserOwnerChatId());
-    }
-
-    public List<PartialBotApiMethod> messageProcess(Update update) {
-        if (update.hasEditedMessage()) {
-            return checkMessage(update.getEditedMessage());
+    private boolean isChannelOwnerChat(String senderUsername) {
+        if (senderUsername == null) {
+            return false;
         }
-        if (update.hasMessage()) {
-            return checkMessage(update.getMessage());
-        }
-        return prepareEmptyAnswer();
+        return senderUsername.equals(botConfig.getSenderChatMedvedev93UserName())
+                || senderUsername.equals(botConfig.getSenderChatRomanmedvedev93UserName());
     }
 
     private List<PartialBotApiMethod> checkMessage(Message message) {
-        val text = message.getText();
-        if(text == null){
-            return prepareDeleteAnswer(message.getChatId(), message.getMessageId());
-        }
-        val userId = message.getFrom().getId();
-        if (isChannelOwnerChat(userId) || text.equals(COMMAND_START)) {
-            return prepareEmptyAnswer();
-        }
-        if (!hasExpectedWord(text) || hasBlockWord(text)) {
+        try {
+            val text = message.getText();
+            if (message.getSenderChat() != null) {
+                val senderUserName = message.getSenderChat().getUserName();
+                if (isChannelOwnerChat(senderUserName) || (text != null && text.equals(COMMAND_START))) {
+                    return prepareEmptyAnswer();
+                }
+            }
+            if (message.getFrom() != null) {
+                val fromUserName = message.getFrom().getUserName();
+                if (isChannelOwnerChat(fromUserName) || (text != null && text.equals(COMMAND_START))) {
+                    return prepareEmptyAnswer();
+                }
+            } else {
+                log.error("Странный кейс:" + message);
+            }
+            if (!hasExpectedWord(text) || hasBlockWord(text)) {
+                //log.info("Удаляем сообщение, причина: !hasExpectedWord(text) || hasBlockWord(text)" + message);
+                return prepareDeleteAnswer(message.getChatId(), message.getMessageId());
+            }
+        } catch (Exception ex){
+            //log.error("Удаляем сообщение, из-за ошибки:" + ex + NEW_LINE + "Сообщение:" + message);
             return prepareDeleteAnswer(message.getChatId(), message.getMessageId());
         }
         return prepareEmptyAnswer();
@@ -81,16 +101,5 @@ public class MenuService {
                 .setMessageId(messageId)
                 .build().createMessageList();
     }
-
-    private String getChatId(Update update) {
-        if (update.hasMessage()) {
-            return String.valueOf(update.getMessage().getChatId());
-        }
-        if (update.hasCallbackQuery()) {
-            return String.valueOf(update.getCallbackQuery().getMessage().getChatId());
-        }
-        return null;
-    }
-
 
 }
