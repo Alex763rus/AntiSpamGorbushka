@@ -59,8 +59,7 @@ public class MenuService {
         if (senderUsername == null) {
             return false;
         }
-        return senderUsername.equals(botConfig.getSenderChatMedvedev93UserName())
-                || senderUsername.equals(botConfig.getSenderChatRomanmedvedev93UserName());
+        return botConfig.getOwnerUsers().contains(senderUsername);
     }
 
     private List<PartialBotApiMethod> checkMessage(Message message) {
@@ -84,7 +83,7 @@ public class MenuService {
                 //log.info("Удаляем сообщение, причина: !hasExpectedWord(text) || hasBlockWord(text)" + message);
                 return prepareDeleteAnswer(message.getChatId(), message.getMessageId());
             }
-        } catch (Exception ex){
+        } catch (Exception ex) {
             //log.error("Удаляем сообщение, из-за ошибки:" + ex + NEW_LINE + "Сообщение:" + message);
             return prepareDeleteAnswer(message.getChatId(), message.getMessageId());
         }
@@ -101,5 +100,4 @@ public class MenuService {
                 .setMessageId(messageId)
                 .build().createMessageList();
     }
-
 }

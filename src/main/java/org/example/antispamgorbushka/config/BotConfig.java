@@ -5,6 +5,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.PropertySource;
 
+import java.util.List;
+import java.util.Set;
+
 import static org.example.antispamgorbushka.constant.Constant.USER_DIR;
 import static org.example.tgcommons.constant.Constant.TextConstants.SHIELD;
 
@@ -25,14 +28,8 @@ public class BotConfig {
     @Value("${admin.chatid}")
     String adminChatId;
 
-    @Value("${sender.chat.romanmedvedev93.user.name}")
-    String senderChatRomanmedvedev93UserName;
-
-    @Value("${sender.chat.medvedev93.user.name}")
-    String senderChatMedvedev93UserName;
-
-//    @Value("${sender.chat.gorbushka.user.name}")
-//    String senderChatGorbushkaUserName;
+    @Value("#{'${sender.chat.medvedev93.user.names}'.split(',')}")
+    Set<String> ownerUsers;
 
     private String getCurrentPath() {
         return System.getProperty(USER_DIR) + SHIELD;
