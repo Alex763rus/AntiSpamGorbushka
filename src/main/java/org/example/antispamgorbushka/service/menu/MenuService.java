@@ -21,7 +21,7 @@ public class MenuService {
     @Autowired
     private BotConfig botConfig;
 
-    private List<String> expectedWords = List.of("куплю", "продам", "предложите");
+    private List<String> expectedWords = List.of("куплю", "предложите");
     private List<String> blockWords = List.of("http", "https", "@", "чат", "канал", "группа", "переходи"
             , "приходи", "профиль", "бот");
 
