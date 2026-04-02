@@ -12,7 +12,7 @@
 
     <groupId>org.example</groupId>
     <artifactId>AntiSpamGorbushka</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>${git.commit.id.abbrev}</version>
     <name>AntiSpamGorbushka</name>
     <description>AntiSpamGorbushka</description>
 
@@ -84,6 +84,8 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <configuration>
+                    <executable>true</executable>
+                    <attach>false</attach>
                     <excludes>
                         <exclude>
                             <groupId>org.projectlombok</groupId>
@@ -93,11 +95,59 @@
                 </configuration>
             </plugin>
             <plugin>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-maven-plugin</artifactId>
+                <groupId>pl.project13.maven</groupId>
+                <artifactId>git-commit-id-plugin</artifactId>
+                <version>4.9.10</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>revision</goal>
+                        </goals>
+                    </execution>
+                </executions>
                 <configuration>
-                    <executable>true</executable>
+                    <abbrevLength>7</abbrevLength>
+                    <skipPoms>false</skipPoms>
+                    <generateGitPropertiesFile>true</generateGitPropertiesFile>
+                    <gitDescribe>
+                        <skip>false</skip>
+                        <always>true</always> <!-- Использует хэш, даже если нет тегов -->
+                        <abbrev>7</abbrev>    <!-- Сокращает до 7 символов -->
+                        <dirty>-dirty</dirty> <!-- Добавляет суффикс, если есть изменения -->
+                    </gitDescribe>
                 </configuration>
+            </plugin>
+            <!--Скопировать docker-file:-->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-resources-plugin</artifactId>
+                <version>3.3.1</version>
+                <executions>
+                    <execution>
+                        <id>copy-dockerfile</id>
+                        <phase>install</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.build.directory/tmp}</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>${project.basedir}</directory>
+                                    <includes>
+                                        <include>Dockerfile</include>
+                                    </includes>
+                                </resource>
+                                <resource>
+                                    <directory>${project.build.directory}</directory>
+                                    <includes>
+                                        <include>AntiSpamGorbushka-${git.commit.id.abbrev}.jar</include>
+                                    </includes>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>

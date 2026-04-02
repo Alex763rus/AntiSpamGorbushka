@@ -69,6 +69,7 @@ public class MenuService {
         try {
             if (message.getSenderChat() != null) {
                 val senderUserName = message.getSenderChat().getUserName();
+                log.info("senderUserName [check owner], chatId: [{}], text: [{}], [{}]", chatId, text, senderUserName);
                 if (isChannelOwnerChat(senderUserName) || (text != null && text.equals(COMMAND_START))) {
                     log.info("The message ok because Sender [is owner], chatId: [{}], text: [{}]", chatId, text);
                     return prepareEmptyAnswer();
