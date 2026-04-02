@@ -56,6 +56,13 @@ public class MenuService {
         return wordsExists(message, expectedWords);
     }
 
+    private boolean isChannelOwnerChat(Long chatId) {
+        if (chatId == null) {
+            return false;
+        }
+        return botConfig.getOwnerUserChatId().contains(chatId);
+    }
+
     private boolean isChannelOwnerChat(String senderUsername) {
         if (senderUsername == null) {
             return false;
@@ -67,18 +74,22 @@ public class MenuService {
         var text = message.getText();
         var chatId = message.getChatId();
         try {
+            if (isChannelOwnerChat(chatId)) {
+                log.info("The message ok because Sender [chatId is owner], chatId: [{}], text: [{}], senderUserName: [{}]", chatId, text);
+                return prepareEmptyAnswer();
+            }
             if (message.getSenderChat() != null) {
                 val senderUserName = message.getSenderChat().getUserName();
-                log.info("senderUserName [check owner], chatId: [{}], text: [{}], [{}]", chatId, text, senderUserName);
+                log.info("senderUserName [check owner], chatId: [{}], text: [{}], senderUserName: [{}]", chatId, text, senderUserName);
                 if (isChannelOwnerChat(senderUserName) || (text != null && text.equals(COMMAND_START))) {
-                    log.info("The message ok because Sender [is owner], chatId: [{}], text: [{}]", chatId, text);
+                    log.info("The message ok because Sender [username is owner], chatId: [{}], text: [{}], senderUserName: [{}]", chatId, text, senderUserName);
                     return prepareEmptyAnswer();
                 }
             }
             if (message.getFrom() != null) {
-                val fromUserName = message.getFrom().getUserName();
-                if (isChannelOwnerChat(fromUserName) || (StringUtils.isNotEmpty(text) && text.equals(COMMAND_START))) {
-                    log.info("The message ok because Sender [isChannelOwnerChat or start], chatId: [{}], text: [{}]", chatId, text);
+                val senderUserName = message.getFrom().getUserName();
+                if (isChannelOwnerChat(senderUserName) || (StringUtils.isNotEmpty(text) && text.equals(COMMAND_START))) {
+                    log.info("The message ok because Sender [isChannelOwnerChat or start], chatId: [{}], text: [{}], senderUserName: [{}]", chatId, text, senderUserName);
                     return prepareEmptyAnswer();
                 }
             } else {

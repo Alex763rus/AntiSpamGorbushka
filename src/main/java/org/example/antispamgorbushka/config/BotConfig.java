@@ -31,6 +31,9 @@ public class BotConfig {
     @Value("#{'${sender.chat.medvedev93.user.names}'.split(',')}")
     Set<String> ownerUsers;
 
+    @Value("#{'${owner.user.chat.ids}'.split(',')}")
+    Set<Long> ownerUserChatId;
+
     private String getCurrentPath() {
         return System.getProperty(USER_DIR) + SHIELD;
     }
