@@ -2,6 +2,7 @@ package org.example.antispamgorbushka.service.menu;
 
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
+import org.apache.commons.lang3.StringUtils;
 import org.example.antispamgorbushka.config.BotConfig;
 import org.example.tgcommons.model.wrapper.DeleteMessageWrap;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -63,31 +64,39 @@ public class MenuService {
     }
 
     private List<PartialBotApiMethod> checkMessage(Message message) {
+        var text = message.getText();
+        var chatId = message.getChatId();
         try {
-            val text = message.getText();
             if (message.getSenderChat() != null) {
                 val senderUserName = message.getSenderChat().getUserName();
                 if (isChannelOwnerChat(senderUserName) || (text != null && text.equals(COMMAND_START))) {
+                    log.info("The message ok because Sender [is owner], chatId: [{}], text: [{}]", chatId, text);
                     return prepareEmptyAnswer();
                 }
             }
             if (message.getFrom() != null) {
                 val fromUserName = message.getFrom().getUserName();
-                if (isChannelOwnerChat(fromUserName) || (text != null && text.equals(COMMAND_START))) {
+                if (isChannelOwnerChat(fromUserName) || (StringUtils.isNotEmpty(text) && text.equals(COMMAND_START))) {
+                    log.info("The message ok because Sender [isChannelOwnerChat or start], chatId: [{}], text: [{}]", chatId, text);
                     return prepareEmptyAnswer();
                 }
             } else {
                 log.error("Странный кейс:" + message);
             }
-            if (!hasExpectedWord(text) || hasBlockWord(text)) {
-                //log.info("Удаляем сообщение, причина: !hasExpectedWord(text) || hasBlockWord(text)" + message);
-                return prepareDeleteAnswer(message.getChatId(), message.getMessageId());
+            if (!hasExpectedWord(text)) {
+                log.info("The message will be deleted because [hasNotExpectedWord], chatId: [{}], text: [{}]", chatId, text);
+                return prepareDeleteAnswer(chatId, message.getMessageId());
             }
+            if (hasBlockWord(text)) {
+                log.info("The message will be deleted because [hasBlockWord], chatId: [{}], text: [{}]", chatId, text);
+                return prepareDeleteAnswer(chatId, message.getMessageId());
+            }
+            log.info("The message ok because [finish all checks], chatId: [{}], text: [{}]", chatId, text);
+            return prepareEmptyAnswer();
         } catch (Exception ex) {
-            //log.error("Удаляем сообщение, из-за ошибки:" + ex + NEW_LINE + "Сообщение:" + message);
-            return prepareDeleteAnswer(message.getChatId(), message.getMessageId());
+            log.error("The message will be deleted because [random error], text: [{}]", text, ex);
+            return prepareDeleteAnswer(chatId, message.getMessageId());
         }
-        return prepareEmptyAnswer();
     }
 
     private List<PartialBotApiMethod> prepareEmptyAnswer() {
