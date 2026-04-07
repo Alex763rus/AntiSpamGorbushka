@@ -1,5 +1,7 @@
 package org.example.antispamgorbushka.service.menu;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import lombok.val;
 import org.apache.commons.lang3.StringUtils;
@@ -21,6 +23,8 @@ public class MenuService {
 
     @Autowired
     private BotConfig botConfig;
+    @Autowired
+    private ObjectMapper objectMapper;
 
     private List<String> expectedWords = List.of("куплю", "предложите");
     private List<String> blockWords = List.of("http", "https", "@", "чат", "канал", "группа", "переходи"
@@ -28,9 +32,19 @@ public class MenuService {
 
     public List<PartialBotApiMethod> messageProcess(Update update) {
         if (update.hasEditedMessage()) {
+            try {
+                log.info("[Check object 1]: {}", objectMapper.writeValueAsString(update.getEditedMessage()));
+            } catch (JsonProcessingException e) {
+                throw new RuntimeException(e);
+            }
             return checkMessage(update.getEditedMessage());
         }
         if (update.hasMessage()) {
+            try {
+                log.info("[Check object 2]: {}", objectMapper.writeValueAsString(update.getMessage()));
+            } catch (JsonProcessingException e) {
+                throw new RuntimeException(e);
+            }
             return checkMessage(update.getMessage());
         }
         return prepareEmptyAnswer();
@@ -74,10 +88,6 @@ public class MenuService {
         var text = message.getText();
         var chatId = message.getChatId();
         try {
-            if (isChannelOwnerChat(chatId)) {
-                log.info("The message ok because Sender [chatId is owner], chatId: [{}], text: [{}], senderUserName: [{}]", chatId, text);
-                return prepareEmptyAnswer();
-            }
             if (message.getSenderChat() != null) {
                 val senderUserName = message.getSenderChat().getUserName();
                 log.info("senderUserName [check owner], chatId: [{}], text: [{}], senderUserName: [{}]", chatId, text, senderUserName);
@@ -87,7 +97,12 @@ public class MenuService {
                 }
             }
             if (message.getFrom() != null) {
-                val senderUserName = message.getFrom().getUserName();
+                var senderUserName = message.getFrom().getUserName();
+                var senderId = message.getFrom().getId();
+                if (isChannelOwnerChat(senderId)) {
+                    log.info("The message ok because Sender [chatId is owner], chatId: [{}], text: [{}], senderUserName: [{}]", chatId, text);
+                    return prepareEmptyAnswer();
+                }
                 if (isChannelOwnerChat(senderUserName) || (StringUtils.isNotEmpty(text) && text.equals(COMMAND_START))) {
                     log.info("The message ok because Sender [isChannelOwnerChat or start], chatId: [{}], text: [{}], senderUserName: [{}]", chatId, text, senderUserName);
                     return prepareEmptyAnswer();
