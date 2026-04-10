@@ -16,6 +16,7 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 import java.util.List;
 
 import static org.example.antispamgorbushka.constant.Constant.Command.COMMAND_START;
+import static org.example.tgcommons.constant.Constant.TextConstants.EMPTY;
 
 @Slf4j
 @Service
@@ -87,12 +88,17 @@ public class MenuService {
     private List<PartialBotApiMethod> checkMessage(Message message) {
         var text = message.getText();
         var chatId = message.getChatId();
+
+        String smallText = EMPTY;
+        if (text != null) {
+            smallText = text.length() > 50 ? text.substring(0, 50) + "..." : text;
+        }
         try {
             if (message.getSenderChat() != null) {
                 val senderUserName = message.getSenderChat().getUserName();
-                log.info("senderUserName [check owner], chatId: [{}], text: [{}], senderUserName: [{}]", chatId, text, senderUserName);
+                log.info("senderUserName [check owner], chatId: [{}], text: [{}], senderUserName: [{}]", chatId, smallText, senderUserName);
                 if (isChannelOwnerChat(senderUserName) || (text != null && text.equals(COMMAND_START))) {
-                    log.info("The message ok because Sender [username is owner], chatId: [{}], text: [{}], senderUserName: [{}]", chatId, text, senderUserName);
+                    log.info("The message ok because Sender [username is owner], chatId: [{}], text: [{}], senderUserName: [{}]", chatId, smallText, senderUserName);
                     return prepareEmptyAnswer();
                 }
             }
@@ -100,28 +106,28 @@ public class MenuService {
                 var senderUserName = message.getFrom().getUserName();
                 var senderId = message.getFrom().getId();
                 if (isChannelOwnerChat(senderId)) {
-                    log.info("The message ok because Sender [chatId is owner], chatId: [{}], text: [{}], senderUserName: [{}]", chatId, text);
+                    log.info("The message ok because Sender [chatId is owner], chatId: [{}], text: [{}], senderUserName: [{}], senderId:[{}]", chatId, smallText, senderUserName, senderId);
                     return prepareEmptyAnswer();
                 }
                 if (isChannelOwnerChat(senderUserName) || (StringUtils.isNotEmpty(text) && text.equals(COMMAND_START))) {
-                    log.info("The message ok because Sender [isChannelOwnerChat or start], chatId: [{}], text: [{}], senderUserName: [{}]", chatId, text, senderUserName);
+                    log.info("The message ok because Sender [isChannelOwnerChat or start], chatId: [{}], text: [{}], senderUserName: [{}], senderId:[{}]", chatId, smallText, senderUserName, senderId);
                     return prepareEmptyAnswer();
                 }
             } else {
                 log.error("Странный кейс:" + message);
             }
             if (!hasExpectedWord(text)) {
-                log.info("The message will be deleted because [hasNotExpectedWord], chatId: [{}], text: [{}]", chatId, text);
+                log.info("The message will be deleted because [hasNotExpectedWord], chatId: [{}], text: [{}]", chatId, smallText);
                 return prepareDeleteAnswer(chatId, message.getMessageId());
             }
             if (hasBlockWord(text)) {
-                log.info("The message will be deleted because [hasBlockWord], chatId: [{}], text: [{}]", chatId, text);
+                log.info("The message will be deleted because [hasBlockWord], chatId: [{}], text: [{}]", chatId, smallText);
                 return prepareDeleteAnswer(chatId, message.getMessageId());
             }
-            log.info("The message ok because [finish all checks], chatId: [{}], text: [{}]", chatId, text);
+            log.info("The message ok because [finish all checks], chatId: [{}], text: [{}]", chatId, smallText);
             return prepareEmptyAnswer();
         } catch (Exception ex) {
-            log.error("The message will be deleted because [random error], text: [{}]", text, ex);
+            log.error("The message will be deleted because [random error], text: [{}]", smallText, ex);
             return prepareDeleteAnswer(chatId, message.getMessageId());
         }
     }
